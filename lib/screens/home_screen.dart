@@ -7,6 +7,7 @@ import 'package:ecommerce_app/screens/product_detail_screen.dart';
 import 'package:ecommerce_app/providers/cart_provider.dart'; // 1. ADD THIS
 import 'package:ecommerce_app/screens/cart_screen.dart'; // 2. ADD THIS
 import 'package:provider/provider.dart'; // 3. ADD THIS
+import 'package:ecommerce_app/screens/order_history_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -56,8 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currentUser!= null ? 'Welcome, ${_currentUser!.email}' : 'Home'),
+        title: Text(_currentUser != null ? 'Welcome, ${_currentUser!.email}' : 'Home'),
         actions: [
+
           Consumer<CartProvider>(
             builder: (context, cart, child) {
               return Badge(
@@ -72,6 +74,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
+                ),
+              );
+            },
+          ),
+
+          IconButton(
+            icon: const Icon(Icons.receipt_long),
+            tooltip: 'My Orders',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const OrderHistoryScreen(),
                 ),
               );
             },
@@ -101,11 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('products')
-            .orderBy('createdAt', descending: true) // 3. Show newest first
+            .orderBy('createdAt', descending: true)
             .snapshots(),
-
         builder: (context, snapshot) {
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -117,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text('No products found. Add some in the Admin Panel!'),
             );
           }
+
           final products = snapshot.data!.docs;
           return GridView.builder(
             padding: const EdgeInsets.all(10.0),
@@ -135,15 +148,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 productName: productData['name'],
                 price: productData['price'],
                 imageUrl: productData['imageUrl'],
-
                 onTap: () {
-                  // 5. Navigate to the new screen
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => ProductDetailScreen(
-                        // 6. Pass the data to the new screen
                         productData: productData,
-                        productId: productDoc.id, // 7. Pass the unique ID!
+                        productId: productDoc.id,
                       ),
                     ),
                   );
