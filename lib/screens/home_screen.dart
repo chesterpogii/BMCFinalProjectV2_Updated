@@ -4,10 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_app/screens/admin_panel_screen.dart';
 import 'package:ecommerce_app/widgets/product_card.dart';
 import 'package:ecommerce_app/screens/product_detail_screen.dart';
-import 'package:ecommerce_app/providers/cart_provider.dart'; // 1. ADD THIS
-import 'package:ecommerce_app/screens/cart_screen.dart'; // 2. ADD THIS
-import 'package:provider/provider.dart'; // 3. ADD THIS
+import 'package:ecommerce_app/providers/cart_provider.dart';
+import 'package:ecommerce_app/screens/cart_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:ecommerce_app/screens/order_history_screen.dart';
+import 'package:ecommerce_app/screens/profile_screen.dart';
+import 'package:ecommerce_app/widgets/notification_icon.dart';
 
+
+import 'package:ecommerce_app/screens/chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userRole = 'user';
   final User? _currentUser = FirebaseAuth.instance.currentUser;
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
@@ -31,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(_currentUser!.uid)
+          .doc(_currentUser.uid)
           .get();
 
       if (doc.exists && doc.data() != null) {
@@ -44,19 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _signOut() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-    } catch (e) {
-      print('Error signing out: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currentUser!= null ? 'Welcome, ${_currentUser!.email}' : 'Home'),
+        title: Text(
+          _currentUser != null ? 'Welcome, ${_currentUser.email}' : 'Home',
+        ),
         actions: [
           Consumer<CartProvider>(
             builder: (context, cart, child) {
@@ -77,6 +78,20 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
 
+          const NotificationIcon(),
+
+          IconButton(
+            icon: const Icon(Icons.receipt_long),
+            tooltip: 'My Orders',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const OrderHistoryScreen(),
+                ),
+              );
+            },
+          ),
+
           if (_userRole == 'admin')
             IconButton(
               icon: const Icon(Icons.admin_panel_settings),
@@ -91,9 +106,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: _signOut,
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Profile',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -101,11 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('products')
-            .orderBy('createdAt', descending: true) // 3. Show newest first
+            .orderBy('createdAt', descending: true)
             .snapshots(),
-
         builder: (context, snapshot) {
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -117,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text('No products found. Add some in the Admin Panel!'),
             );
           }
+
           final products = snapshot.data!.docs;
           return GridView.builder(
             padding: const EdgeInsets.all(10.0),
@@ -135,15 +155,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 productName: productData['name'],
                 price: productData['price'],
                 imageUrl: productData['imageUrl'],
-
                 onTap: () {
-                  // 5. Navigate to the new screen
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => ProductDetailScreen(
-                        // 6. Pass the data to the new screen
                         productData: productData,
-                        productId: productDoc.id, // 7. Pass the unique ID!
+                        productId: productDoc.id,
                       ),
                     ),
                   );
@@ -153,6 +170,44 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
+
+      floatingActionButton: _userRole == 'user'
+          ? StreamBuilder<DocumentSnapshot>(
+        stream: _firestore
+            .collection('chats')
+            .doc(_currentUser!.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          int unreadCount = 0;
+
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final data = snapshot.data!.data();
+            if (data != null) {
+              unreadCount =
+                  (data as Map<String, dynamic>)['unreadByUserCount'] ?? 0;
+            }
+          }
+
+          return Badge(
+            label: Text('$unreadCount'),
+            isLabelVisible: unreadCount > 0,
+            child: FloatingActionButton.extended(
+              icon: const Icon(Icons.support_agent),
+              label: const Text("Contact Admin"),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(
+                      chatRoomId: _currentUser!.uid,
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      )
+          : null,
     );
   }
 }

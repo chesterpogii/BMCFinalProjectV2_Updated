@@ -66,4 +66,5 @@ class DefaultFirebaseOptions {
     projectId: 'ecommerce-app-21',
     storageBucket: 'ecommerce-app-21.firebasestorage.app',
   );
+
 }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ProductCard extends StatelessWidget {
-
-
   final String productName;
   final double price;
   final String imageUrl;
@@ -21,27 +19,33 @@ class ProductCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Card(
-          elevation: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                    );
-                  },
-                ),
+        elevation: 3,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                  );
+                },
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
+            ),
+
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -51,26 +55,27 @@ class ProductCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+
+                    const Spacer(),
 
                     Text(
                       '₱${price.toStringAsFixed(2)}',
                       style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
+                        fontSize: 15,
+                        color: Colors.grey[800],
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          )),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
-
-
-

@@ -1,4 +1,5 @@
 import 'package:ecommerce_app/providers/cart_provider.dart';
+import 'package:ecommerce_app/screens/payment_screen.dart'; // Payment screen import
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,7 +8,7 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    // We listen so that the list and total update
     final cart = Provider.of<CartProvider>(context);
 
     return Scaffold(
@@ -16,19 +17,16 @@ class CartScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // 2. The list of items
+          // CART LIST
           Expanded(
-            // 3. If cart is empty, show a message
             child: cart.items.isEmpty
                 ? const Center(child: Text('Your cart is empty.'))
                 : ListView.builder(
               itemCount: cart.items.length,
               itemBuilder: (context, index) {
                 final cartItem = cart.items[index];
-                // 4. A ListTile to show item details
                 return ListTile(
                   leading: CircleAvatar(
-                    // Show a mini-image (or first letter)
                     child: Text(cartItem.name[0]),
                   ),
                   title: Text(cartItem.name),
@@ -36,14 +34,12 @@ class CartScreen extends StatelessWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 5. Total for this item
                       Text(
-                          '₱${(cartItem.price * cartItem.quantity).toStringAsFixed(2)}'),
-                      // 6. Remove button
+                        '₱${(cartItem.price * cartItem.quantity).toStringAsFixed(2)}',
+                      ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
-                          // 7. Call the removeItem function
                           cart.removeItem(cartItem.id);
                         },
                       ),
@@ -54,28 +50,77 @@ class CartScreen extends StatelessWidget {
             ),
           ),
 
-          // 8. The Total Price Summary
+          // PRICE SUMMARY CARD
           Card(
             margin: const EdgeInsets.all(16),
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  const Text(
-                    'Total:',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Subtotal:', style: TextStyle(fontSize: 16)),
+                      Text(
+                        '₱${cart.subtotal.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '₱${cart.totalPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('VAT (12%):', style: TextStyle(fontSize: 16)),
+                      Text(
+                        '₱${cart.vat.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20, thickness: 1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total:',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(
+                        '₱${cart.totalPriceWithVat.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-          // We'll add a "Checkout" button here in a future module
-          const SizedBox(height: 20),
+
+          // PROCEED BUTTON
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+              ),
+              onPressed: cart.items.isEmpty
+                  ? null
+                  : () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PaymentScreen(
+                      totalAmount: cart.totalPriceWithVat,
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Proceed to Payment'),
+            ),
+          ),
         ],
       ),
     );
